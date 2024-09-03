@@ -34,6 +34,7 @@ component data_creator is
         clk_in : in std_logic;
         rst : in std_logic;
         en_ddr : out std_logic;
+        calib_complete : in std_logic;
         ddr_addr : out std_logic_vector(28 downto 0);
         ddr_cmd : out std_logic_vector(2 downto 0);
         -- write
@@ -57,6 +58,7 @@ component ddr4 is
         clk_ddr_out : out std_logic;
         rst_out : out std_logic;
         ddr_en : in std_logic;
+        calib_complete : out std_logic;
         ddr_addr : in std_logic_vector(28 downto 0);
         ddr_cmd : in std_logic_vector(2 downto 0);
         -- write
@@ -91,6 +93,7 @@ end component;
 signal clk_s : std_logic;
 signal rst_s : std_logic;
 signal ddr_en_s : std_logic;
+signal calib_complete_s : std_logic;
 signal ddr_addr_s : std_logic_vector(28 downto 0);
 signal ddr_cmd_s : std_logic_vector(2 downto 0);
 signal ddr_wren_s : std_logic;
@@ -111,6 +114,7 @@ impl_data_creator : data_creator
         clk_in => clk_s,
         rst => rst_s,
         en_ddr => ddr_en_s,
+        calib_complete => calib_complete_s,
         ddr_addr => ddr_addr_s,
         ddr_cmd => ddr_cmd_s,
         -- write
@@ -155,6 +159,7 @@ impl_ddr4 : ddr4
         clk_ddr_out => clk_s,
         rst_out => rst_s,
         ddr_en => ddr_en_s,
+        calib_complete => calib_complete_s,
         ddr_addr => ddr_addr_s,
         ddr_cmd => ddr_cmd_s,
         -- write

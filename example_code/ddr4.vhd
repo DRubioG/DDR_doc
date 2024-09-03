@@ -9,6 +9,7 @@ entity ddr4 is
         clk_ddr_out : out std_logic;
         rst_out : out std_logic;
         ddr_en : in std_logic;
+        calib_complete : out std_logic;
         ddr_addr : in std_logic_vector(28 downto 0);
         ddr_cmd : in std_logic_vector(2 downto 0);
         -- write
@@ -89,7 +90,7 @@ begin
 
 ddr4 : ddr4_0
   PORT MAP (
-    c0_init_calib_complete => open,
+    c0_init_calib_complete => calib_complete,
     dbg_clk => open,
     c0_sys_clk_i => clk_in,
     dbg_bus => open,
