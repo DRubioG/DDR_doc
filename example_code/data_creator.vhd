@@ -7,6 +7,7 @@ entity data_creator is
         clk_in : in std_logic;
         rst : in std_logic;
         en_ddr : out std_logic;
+        ddr_rdy : in std_logic;
         calib_complete : in std_logic;
         ddr_addr : out std_logic_vector(28 downto 0);
         ddr_cmd : out std_logic_vector(2 downto 0);
@@ -16,9 +17,8 @@ entity data_creator is
         ddr_wr_rdy : in std_logic;
         ddr_wr_data : out std_logic_vector(511 downto 0);
         --read
-        ddr_rden : in std_logic;
+        ddr_rd_data_valid : in std_logic;
         ddr_rdend : in std_logic;
-        ddr_rd_rdy : in std_logic;
         ddr_rd_data : in std_logic_vector(511 downto 0)
     );
 end data_creator;
@@ -57,7 +57,7 @@ PORT MAP (
 	probe0 => ddr_wr_data_s(15 downto 0), 
 	probe1 => ddr_addr_s, 
 	probe2 => ddr_cmd_s,
-	probe3 => ddr_rd_rdy,
+	probe3 => ddr_rdy,
 	probe4 => ddr_rd_data(15 downto 0),
 	probe5 => std_logic_vector(cont)
 );
@@ -87,7 +87,9 @@ PORT MAP (
                     en_ddr <= '1';
                     ddr_wren <= '1';
                     if ddr_wr_rdy = '1' then
-                        ddr_addr_s <= std_logic_vector(to_unsigned(0, ddr_addr_s'length-cont'length)) & std_logic_vector(cont);
+                        if ddr_rdy = '1' then
+                            ddr_addr_s <= std_logic_vector(to_unsigned(0, ddr_addr_s'length-cont'length)) & std_logic_vector(cont);
+                        end if;
                         ddr_wr_data_s <= std_logic_vector(to_unsigned(0, ddr_wr_data_s'length-cont'length)) & std_logic_vector(cont);
                         ddr_wrend <= '1';
 --                    else
@@ -105,7 +107,7 @@ PORT MAP (
                 when READ =>
                     en_ddr <= '1';
                     ddr_cmd_s <= (0=>'1',others=>'0');
-                    if ddr_rd_rdy = '1' then
+                    if ddr_rd_data_valid = '1' then
                         ddr_addr_s <= std_logic_vector(to_unsigned(0, ddr_addr_s'length-cont'length)) & std_logic_vector(cont);
                     end if;
                     if change_state = '1' then
@@ -146,7 +148,7 @@ PORT MAP (
                     end if;
                  end if;
             elsif state = READ then 
-                if ddr_rd_rdy = '1'then
+                if ddr_rd_data_valid = '1'then
                     change_state <= '0';
                     if cont >= to_unsigned(1000, ddr_addr'length)  then --(0=>'0',cont'range=>'1') then
                         cont <= (others=>'0');

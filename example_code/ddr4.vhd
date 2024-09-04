@@ -9,6 +9,7 @@ entity ddr4 is
         clk_ddr_out : out std_logic;
         rst_out : out std_logic;
         ddr_en : in std_logic;
+        ddr_rdy : out std_logic;
         calib_complete : out std_logic;
         ddr_addr : in std_logic_vector(28 downto 0);
         ddr_cmd : in std_logic_vector(2 downto 0);
@@ -18,9 +19,8 @@ entity ddr4 is
         ddr_wr_rdy : out std_logic;
         ddr_wr_data : in std_logic_vector(511 downto 0);
         --read
-        ddr_rden : out std_logic;
+        ddr_rd_data_valid : out std_logic;
         ddr_rdend : out std_logic;
-        ddr_rd_rdy : out std_logic;
         ddr_rd_data : out std_logic_vector(511 downto 0);
         
         -- external ddr ports
@@ -115,8 +115,8 @@ ddr4 : ddr4_0
     c0_ddr4_app_wdf_end => ddr_wrend,
     c0_ddr4_app_wdf_wren => ddr_wren,
     c0_ddr4_app_rd_data_end => ddr_rdend,
-    c0_ddr4_app_rd_data_valid => ddr_rden,
-    c0_ddr4_app_rdy => ddr_rd_rdy,
+    c0_ddr4_app_rd_data_valid => ddr_rd_data_valid,
+    c0_ddr4_app_rdy => ddr_rdy,
     c0_ddr4_app_wdf_rdy => ddr_wr_rdy,
     c0_ddr4_app_addr => ddr_addr,
     c0_ddr4_app_cmd => ddr_cmd,
