@@ -1,194 +1,128 @@
 library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-Library UNISIM;
+use IEEE.STD_LOGIC_1164.all;
+library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity top_ddr is
-    Port (
-        clk_p : in std_logic;
-        clk_n : in std_logic;
-        rst_n : in std_logic;
-    
-        -- DDR
-        ddr4_adr : out std_logic_vector(16 downto 0);
-        ddr4_ba : out std_logic_vector(1 downto 0);
-        ddr4_act_n : out std_logic;
-        ddr4_bg : out std_logic;
-        ddr4_cke : out std_logic;
-        ddr4_odt : out std_logic;
-        ddr4_cs_n : out std_logic;
-        ddr4_ck_c : out std_logic;
-        ddr4_ck_t : out std_logic;
-        ddr4_reset_n : out std_logic;
-        ddr4_dm_dbi_n : inout std_logic_vector(7 downto 0);
-        ddr4_dq : inout std_logic_vector(63 downto 0);
-        ddr4_dqs_c : inout std_logic_vector(7 downto 0);
-        ddr4_dqs_t : inout std_logic_vector(7 downto 0)
-     );
+  port (
+    CLK_P_I : in std_logic;
+    CLK_N_I : in std_logic;
+    RST_N_I : in std_logic;
+
+    -- DDR
+    DDR4_ADR_O       : out std_logic_vector(16 downto 0);
+    DDR4_BA_O        : out std_logic_vector(1 downto 0);
+    DDR4_ACT_N_O     : out std_logic;
+    DDR4_BG_O        : out std_logic;
+    DDR4_CKE_O       : out std_logic;
+    DDR4_ODT_O       : out std_logic;
+    DDR4_CS_N_O      : out std_logic;
+    DDR4_CK_C_O      : out std_logic;
+    DDR4_CK_T_O      : out std_logic;
+    DDR4_RESET_N_O   : out std_logic;
+    DDR4_DM_DBI_N_IO : inout std_logic_vector(7 downto 0);
+    DDR4_DQ_IO       : inout std_logic_vector(63 downto 0);
+    DDR4_DQS_C_IO    : inout std_logic_vector(7 downto 0);
+    DDR4_DQS_T_IO    : inout std_logic_vector(7 downto 0)
+  );
 end top_ddr;
 
 architecture Behavioral of top_ddr is
+  signal s_clk               : std_logic;
+  signal s_rst_n             : std_logic;
+  signal s_ddr_en            : std_logic;
+  signal s_calib_complete    : std_logic;
+  signal s_ddr_addr          : std_logic_vector(28 downto 0);
+  signal s_ddr_cmd           : std_logic_vector(2 downto 0);
+  signal s_ddr_wren          : std_logic;
+  signal s_ddr_wrend         : std_logic;
+  signal s_ddr_wr_rdy        : std_logic;
+  signal s_ddr_wr_data       : std_logic_vector(511 downto 0);
+  signal s_ddr_rdy           : std_logic;
+  signal s_ddr_rdend         : std_logic;
+  signal s_ddr_rd_data_valid : std_logic;
+  signal s_ddr_rd_data       : std_logic_vector(511 downto 0);
 
-component data_creator is
-    Port ( 
-        clk_in : in std_logic;
-        rst : in std_logic;
-        en_ddr : out std_logic;
-        ddr_rdy : in std_logic;
-        calib_complete : in std_logic;
-        ddr_addr : out std_logic_vector(28 downto 0);
-        ddr_cmd : out std_logic_vector(2 downto 0);
-        -- write
-        ddr_wren : out std_logic;
-        ddr_wrend : out std_logic;
-        ddr_wr_rdy : in std_logic;
-        ddr_wr_data : out std_logic_vector(511 downto 0);
-        --read
-        ddr_rdend : in std_logic;
-        ddr_rd_data_valid : in std_logic;
-        ddr_rd_data : in std_logic_vector(511 downto 0)
-    );
-end component;
-
-component ddr4 is
-    Port ( 
-        clk_in : in std_logic;
-        rst_n : in std_logic;
-        -- internal ports
-        clk_ddr_out : out std_logic;
-        rst_out : out std_logic;
-        ddr_en : in std_logic;
-        ddr_rdy : out std_logic;
-        calib_complete : out std_logic;
-        ddr_addr : in std_logic_vector(28 downto 0);
-        ddr_cmd : in std_logic_vector(2 downto 0);
-        -- write
-        ddr_wren : in std_logic;
-        ddr_wrend : in std_logic;
-        ddr_wr_rdy : out std_logic;
-        ddr_wr_data : in std_logic_vector(511 downto 0);
-        --read
-        ddr_rd_data_valid : out std_logic;
-        ddr_rdend : out std_logic;
-        ddr_rd_data : out std_logic_vector(511 downto 0);
-        
-        -- external ddr ports
-        ddr4_adr : out std_logic_vector(16 downto 0);
-        ddr4_ba : out std_logic_vector(1 downto 0);
-        ddr4_act_n : out std_logic;
-        ddr4_bg : out std_logic;
-        ddr4_cke : out std_logic;
-        ddr4_odt : out std_logic;
-        ddr4_cs_n : out std_logic;
-        ddr4_ck_c : out std_logic;
-        ddr4_ck_t : out std_logic;
-        ddr4_reset_n : out std_logic;
-        ddr4_dm_dbi_n : inout std_logic_vector(7 downto 0);
-        ddr4_dq : inout std_logic_vector(63 downto 0);
-        ddr4_dqs_c : inout std_logic_vector(7 downto 0);
-        ddr4_dqs_t : inout std_logic_vector(7 downto 0)
-    );
-end component;
-
-signal clk_s : std_logic;
-signal rst_s : std_logic;
-signal ddr_en_s : std_logic;
-signal calib_complete_s : std_logic;
-signal ddr_addr_s : std_logic_vector(28 downto 0);
-signal ddr_cmd_s : std_logic_vector(2 downto 0);
-signal ddr_wren_s : std_logic;
-signal ddr_wrend_s : std_logic;
-signal ddr_wr_rdy_s : std_logic;
-signal ddr_wr_data_s : std_logic_vector(511 downto 0);
-signal ddr_rdy_s : std_logic;
-signal ddr_rdend_s : std_logic;
-signal ddr_rd_data_valid_s : std_logic;
-signal ddr_rd_data_s : std_logic_vector(511 downto 0);
-
-signal clk_in_s , clk_in_s0: std_logic;
+  signal s_clk_in, s_clk_bufg : std_logic;
 
 begin
 
-impl_data_creator : data_creator
-    Port map ( 
-        clk_in => clk_s,
-        rst => rst_s,
-        en_ddr => ddr_en_s,
-        ddr_rdy => ddr_rdy_s,
-        calib_complete => calib_complete_s,
-        ddr_addr => ddr_addr_s,
-        ddr_cmd => ddr_cmd_s,
-        -- write
-        ddr_wren => ddr_wren_s,
-        ddr_wrend => ddr_wrend_s,
-        ddr_wr_rdy => ddr_wr_rdy_s,
-        ddr_wr_data => ddr_wr_data_s,
-        --read
-        ddr_rdend => ddr_rdend_s,
-        ddr_rd_data_valid => ddr_rd_data_valid_s,
-        ddr_rd_data => ddr_rd_data_s
-    );
-    
-    
-    
-    
-    
-impl_IBUFDS : IBUFDS
-generic map (
-   DIFF_TERM => FALSE, -- Differential Termination
-   IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
-   IOSTANDARD => "DEFAULT")
-port map (
-   O => clk_in_s0,  -- Buffer output
-   I => clk_p,  -- Diff_p buffer input (connect directly to top-level port)
-   IB => clk_n -- Diff_n buffer input (connect directly to top-level port)
-);
-
- 
-impl_BUFG : BUFG
-    port map(
-        I => clk_in_s0,
-        O => clk_in_s
+  impl_data_creator : entity work.data_creator
+    port map
+    (
+      CLK_I            => s_clk,
+      RST_N_I          => s_rst_n,
+      EN_DDR_O         => s_ddr_en,
+      DDR_RDY_I        => s_ddr_rdy,
+      CALIB_COMPLETE_I => s_calib_complete,
+      DDR_ADDR_O       => s_ddr_addr,
+      DDR_CMD_O        => s_ddr_cmd,
+      -- write
+      DDR_WREN_O    => s_ddr_wren,
+      DDR_WREND_O   => s_ddr_wrend,
+      DDR_WR_RDY_I  => s_ddr_wr_rdy,
+      DDR_WR_DATA_O => s_ddr_wr_data,
+      --read
+      DDR_RDEND_I         => s_ddr_rdend,
+      DDR_RD_DATA_VALID_I => s_ddr_rd_data_valid,
+      DDR_RD_DATA_I       => s_ddr_rd_data
     );
 
-impl_ddr4 : ddr4 
-    Port map( 
-        clk_in => clk_in_s,
-        rst_n => rst_n,
-        -- internal ports
-        clk_ddr_out => clk_s,
-        rst_out => rst_s,
-        ddr_en => ddr_en_s,
-        ddr_rdy => ddr_rdy_s,
-        calib_complete => calib_complete_s,
-        ddr_addr => ddr_addr_s,
-        ddr_cmd => ddr_cmd_s,
-        -- write
-        ddr_wren => ddr_wren_s,
-        ddr_wrend => ddr_wrend_s,
-        ddr_wr_rdy => ddr_wr_rdy_s,
-        ddr_wr_data => ddr_wr_data_s,
-        --read
-        ddr_rdend => ddr_rdend_s,
-        ddr_rd_data_valid => ddr_rd_data_valid_s,
-        ddr_rd_data => ddr_rd_data_s,
-        
-        -- external ddr ports
-        ddr4_adr => ddr4_adr,
-        ddr4_ba => ddr4_ba,
-        ddr4_act_n => ddr4_act_n,
-        ddr4_bg => ddr4_bg,
-        ddr4_cke => ddr4_cke,
-        ddr4_odt => ddr4_odt,
-        ddr4_cs_n => ddr4_cs_n,
-        ddr4_ck_c => ddr4_ck_c,
-        ddr4_ck_t => ddr4_ck_t,
-        ddr4_reset_n => ddr4_reset_n,
-        ddr4_dm_dbi_n => ddr4_dm_dbi_n,
-        ddr4_dq => ddr4_dq,
-        ddr4_dqs_c => ddr4_dqs_c,
-        ddr4_dqs_t => ddr4_dqs_t
+  impl_IBUFDS : IBUFDS
+  generic map(
+    DIFF_TERM    => FALSE, -- Differential Termination
+    IBUF_LOW_PWR => TRUE, -- Low power (TRUE) vs. performance (FALSE) setting for referenced I/O standards
+    IOSTANDARD   => "DEFAULT")
+  port map
+  (
+    O  => s_clk_bufg, -- Buffer output
+    I  => CLK_P_I, -- Diff_p buffer input (connect directly to top-level port)
+    IB => CLK_N_I -- Diff_n buffer input (connect directly to top-level port)
+  );
+  impl_BUFG : BUFG
+  port map
+  (
+    I => s_clk_bufg,
+    O => s_clk_in
+  );
+
+  impl_ddr4 : entity work.ddr4
+    port map
+    (
+      CLK_I   => s_clk_in,
+      RST_N_I => RST_N_I,
+      -- internal ports
+      CLK_DDR_O        => s_clk,
+      RST_O            => s_rst_n,
+      DDR_EN_I         => s_ddr_en,
+      DDR_RDY_O        => s_ddr_rdy,
+      CALIB_COMPLETE_O => s_calib_complete,
+      DDR_ADDR_I       => s_ddr_addr,
+      DDR_CMD_I        => s_ddr_cmd,
+      -- write
+      DDR_WREN_I    => s_ddr_wren,
+      DDR_WREND_I   => s_ddr_wrend,
+      DDR_WR_RDY_O  => s_ddr_wr_rdy,
+      DDR_WR_DATA_I => s_ddr_wr_data,
+      --read
+      DDR_RD_END_O        => s_ddr_rdend,
+      DDR_RD_DATA_VALID_O => s_ddr_rd_data_valid,
+      DDR_RD_DATA_O       => s_ddr_rd_data,
+
+      -- external ddr ports
+      DDR4_ADR         => DDR4_ADR_O,
+      DDR4_BA_O        => DDR4_BA_O,
+      DDR4_ACT_N_O     => DDR4_ACT_N_O,
+      DDR4_BG_O        => DDR4_BG_O,
+      DDR4_CKE_O       => DDR4_CKE_O,
+      DDR4_ODT_O       => DDR4_ODT_O,
+      DDR4_CS_N_O      => DDR4_CS_N_O,
+      DDR4_CK_C_O      => DDR4_CK_C_O,
+      DDR4_CK_T_O      => DDR4_CK_T_O,
+      DDR4_RESET_N_O   => DDR4_RESET_N_O,
+      DDR4_DM_DBI_N_IO => DDR4_DM_DBI_N_IO,
+      DDR4_DQ_IO       => DDR4_DQ_IO,
+      DDR4_DQS_C_IO    => DDR4_DQS_C_IO,
+      DDR4_DQS_T_IO    => DDR4_DQS_T_IO
     );
-
-
 end Behavioral;
